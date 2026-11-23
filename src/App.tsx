@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Shield, Volume2, AlertTriangle, Phone, X, FileText, Lock, Settings, ChevronRight } from 'lucide-react';
 import type { Sector } from './types';
-import { getIsPro, setIsPro, isInstallBannerDismissed, dismissInstallBanner } from './storage';
+import { getIsPro, consumeUnlockParam, isInstallBannerDismissed, dismissInstallBanner } from './storage';
 import { YellowSector } from './components/YellowSector';
 import { RedSector } from './components/RedSector';
 import { GreenSector } from './components/GreenSector';
@@ -10,25 +10,41 @@ import { PaywallModal } from './components/PaywallModal';
 
 export default function App() {
   const [sector, setSector] = useState<Sector>('home');
-  const [isPro, setIsProState] = useState(getIsPro());
+  const [isPro, setIsProState] = useState(() => consumeUnlockParam() || getIsPro());
   const [legalModal, setLegalModal] = useState<'offer' | 'privacy' | 'subscription' | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [openGreenAfterUnlock, setOpenGreenAfterUnlock] = useState(false);
   const [showBanner, setShowBanner] = useState(!isInstallBannerDismissed());
 
-  // URL unlock parameter handling
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const unlock = params.get('unlock');
-    if (unlock === 'pro2026') {
-      setIsPro(true);
+  function goGreen() {
+    if (isPro || getIsPro()) {
       setIsProState(true);
-      window.history.replaceState({}, '', window.location.pathname);
+      setSector('green');
+      return;
     }
-  }, []);
+    setOpenGreenAfterUnlock(true);
+    setPaywallOpen(true);
+  }
+
+  function openPaywall() {
+    setOpenGreenAfterUnlock(false);
+    setPaywallOpen(true);
+  }
+
+  function closePaywall() {
+    setPaywallOpen(false);
+    setOpenGreenAfterUnlock(false);
+  }
 
   function handleUnlock() {
     setIsProState(true);
+    if (openGreenAfterUnlock) setSector('green');
+    setOpenGreenAfterUnlock(false);
   }
+
+  const paywall = (
+    <PaywallModal open={paywallOpen} onClose={closePaywall} onUnlocked={handleUnlock} />
+  );
 
   function handleBannerClose() {
     setShowBanner(false);
@@ -37,11 +53,14 @@ export default function App() {
 
   if (sector === 'yellow') {
     return (
-      <YellowSector
-        onBack={() => setSector('home')}
-        onGoRed={() => setSector('red')}
-        onGoGreen={() => setSector('green')}
-      />
+      <>
+        <YellowSector
+          onBack={() => setSector('home')}
+          onGoRed={() => setSector('red')}
+          onGoGreen={goGreen}
+        />
+        {paywall}
+      </>
     );
   }
 
@@ -49,7 +68,7 @@ export default function App() {
     return <RedSector onBack={() => setSector('home')} onGoYellow={() => setSector('yellow')} />;
   }
 
-  if (sector === 'green') {
+  if (sector === 'green' && isPro) {
     return (
       <GreenSector
         onBack={() => setSector('home')}
@@ -64,12 +83,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-ink-900 flex flex-col safe-top">
       <HomeScreen
-        onSector={setSector}
+        onSector={(s) => (s === 'green' ? goGreen() : setSector(s))}
         isPro={isPro}
         showBanner={showBanner}
         onBannerClose={handleBannerClose}
         onLegal={setLegalModal}
-        onPaywall={() => setPaywallOpen(true)}
+        onPaywall={openPaywall}
       />
 
       <LegalModal
@@ -78,11 +97,7 @@ export default function App() {
         onClose={() => setLegalModal(null)}
       />
 
-      <PaywallModal
-        open={paywallOpen}
-        onClose={() => setPaywallOpen(false)}
-        onUnlocked={handleUnlock}
-      />
+      {paywall}
     </div>
   );
 }
