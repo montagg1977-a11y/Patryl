@@ -36,7 +36,13 @@ export default function App() {
   }
 
   if (sector === 'yellow') {
-    return <YellowSector onBack={() => setSector('home')} onGoRed={() => setSector('red')} />;
+    return (
+      <YellowSector
+        onBack={() => setSector('home')}
+        onGoRed={() => setSector('red')}
+        onGoGreen={() => setSector('green')}
+      />
+    );
   }
 
   if (sector === 'red') {
