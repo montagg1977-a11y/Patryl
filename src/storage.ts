@@ -10,9 +10,15 @@ const KEYS = {
   autoNarration: 'patrol_autoNarration',
 };
 
+const PRO_UNLOCKED_KEY = 'isProUnlocked';
+export const PRO_ACCESS_CODE = 'pro2026';
+
 export function getIsPro(): boolean {
   try {
-    return localStorage.getItem(KEYS.isPro) === 'true';
+    return (
+      localStorage.getItem(PRO_UNLOCKED_KEY) === 'true' ||
+      localStorage.getItem(KEYS.isPro) === 'true'
+    );
   } catch {
     return false;
   }
@@ -20,8 +26,27 @@ export function getIsPro(): boolean {
 
 export function setIsPro(value: boolean) {
   try {
+    localStorage.setItem(PRO_UNLOCKED_KEY, value ? 'true' : 'false');
     localStorage.setItem(KEYS.isPro, value ? 'true' : 'false');
   } catch { /* ignore */ }
+}
+
+export function isValidAccessCode(code: string): boolean {
+  return code.trim().toLowerCase() === PRO_ACCESS_CODE;
+}
+
+export function consumeUnlockParam(): boolean {
+  if (typeof window === 'undefined') return false;
+  const url = new URL(window.location.href);
+  const unlock = url.searchParams.get('unlock');
+  if (unlock === null) return false;
+
+  url.searchParams.delete('unlock');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+
+  if (!isValidAccessCode(unlock)) return false;
+  setIsPro(true);
+  return true;
 }
 
 export function getSosSettings(): SosSettings {
