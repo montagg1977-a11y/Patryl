@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>AI Патруль</title>
+  <rect width="512" height="512" fill="#09090b"/>
+  <rect x="171.5" y="79.4" width="169" height="353.2" rx="46" fill="#27272a" stroke="#3f3f46" stroke-width="6"/>
+  <circle cx="256" cy="145.9" r="42" fill="#ef4444"/>
+  <circle cx="256" cy="256" r="42" fill="#eab308"/>
+  <circle cx="256" cy="366.1" r="42" fill="#22c55e"/>
+</svg>
